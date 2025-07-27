@@ -1,0 +1,168 @@
+# .github/workflows/deploy.yml
+
+# GitHub Actions workflow to build, push, and deploy the Flask application
+
+
+
+name: Deploy Flask App to AWS Fargate
+
+
+
+on:
+
+  push:
+
+    branches:
+
+      - main # Trigger this workflow on pushes to the main branch
+
+    paths:
+
+      - 'app.py'
+
+      - 'Dockerfile'
+
+      - 'requirements.txt'
+
+      - 'terraform/**' # Trigger if any Terraform files change
+
+
+
+env:
+
+  AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region from GitHub Secret
+
+  ECR_REPOSITORY_NAME: zameel-devops-flask-repo # Must match the ECR repo
+name in Terraform
+
+  ECS_CLUSTER_NAME: zameel-devops-flask-cluster # Must match the ECS cluster
+name in Terraform
+
+  ECS_SERVICE_NAME: zameel-devops-flask-service # Must match the ECS service
+name in Terraform
+
+  ECS_TASK_DEFINITION_FAMILY: zameel-devops-flask-task # Must match the ECS
+task definition family in Terraform
+
+
+
+jobs:
+
+  deploy:
+
+    name: Build, Push & Deploy
+
+    runs-on: ubuntu-latest # Use a GitHub-hosted runner
+
+
+
+    steps:
+
+    - name: Checkout code
+
+      uses: actions/checkout@v4 # Action to check out your repository code
+
+
+
+    - name: Configure AWS credentials
+
+      uses: aws-actions/configure-aws-credentials@v4
+
+      with:
+
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS Access Key
+ID from GitHub Secret
+
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS
+Secret Access Key from GitHub Secret
+
+        aws-region: ${{ env.AWS_REGION }}
+
+
+
+    - name: Login to Amazon ECR
+
+      id: login-ecr
+
+      uses: aws-actions/amazon-ecr-login@v2
+
+
+
+    - name: Build, tag, and push image to Amazon ECR
+
+      id: build-image
+
+      env:
+
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+
+        IMAGE_TAG: ${{ github.sha }} # Use Git SHA as image tag for
+uniqueness
+
+      run: |
+
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG .
+
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG
+
+        echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY_NAME:$IMAGE_TAG" >>
+$GITHUB_OUTPUT
+
+
+
+    - name: Download task definition
+
+      # Download the existing task definition to modify it with the new
+image
+
+      run: |
+
+        aws ecs describe-task-definition --task-definition ${{
+env.ECS_TASK_DEFINITION_FAMILY }} --query taskDefinition >
+task-definition.json
+
+
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+
+      id: render-task-definition
+
+      # Use `jq` to update the image in the task definition JSON
+
+      run: |
+
+        NEW_TASK_DEF=$(jq --arg IMAGE "${{
+steps.build-image.outputs.image_uri }}" \
+
+          '.containerDefinitions[0].image = $IMAGE | .cpu = "256" | .memory
+= "512" | del(.taskDefinitionArn) | del(.revision) | del(.status) |
+del(.compatibilities) | del(.requiresAttributes) | del(.registeredAt) |
+del(.registeredBy) | del(.tags)' \
+
+          task-definition.json)
+
+        echo "$NEW_TASK_DEF" > updated-task-definition.json
+
+        cat updated-task-definition.json # For debugging
+
+
+
+    - name: Deploy Amazon ECS task definition
+
+      # Register a new task definition revision and update the ECS service
+
+      run: |
+
+        NEW_TASK_DEFINITION_ARN=$(aws ecs register-task-definition
+--cli-input-json file://updated-task-definition.json --query
+'taskDefinition.taskDefinitionArn' --output text)
+
+        aws ecs update-service \
+
+          --cluster ${{ env.ECS_CLUSTER_NAME }} \
+
+          --service ${{ env.ECS_SERVICE_NAME }} \
+
+          --task-definition $NEW_TASK_DEFINITION_ARN \
+
+          --force-new-deployment
