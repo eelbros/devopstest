@@ -34,7 +34,6 @@ jobs:
       with:
         jobs:
           deploy:
-          
             steps:
             # ... other steps before this ...
             - name: Configure AWS credentials
