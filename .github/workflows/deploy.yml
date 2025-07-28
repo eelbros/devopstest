@@ -32,17 +32,13 @@ env:
 
   AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region from GitHub Secret
 
-  ECR_REPOSITORY_NAME: zameel-devops-flask-repo-lb-404936147.us-east-1.elb.amazonaws.com # Must match the ECR repo
-name in Terraform
+  ECR_REPOSITORY_NAME: zameel-devops-flask-repo-lb-404936147.us-east-1.elb.amazonaws.com # Must match the ECR repo name in Terraform
 
-  ECS_CLUSTER_NAME: zameel-devops-flask-cluster # Must match the ECS cluster
-name in Terraform
+  ECS_CLUSTER_NAME: zameel-devops-flask-cluster # Must match the ECS cluster name in Terraform
 
-  ECS_SERVICE_NAME: zameel-devops-flask-service # Must match the ECS service
-name in Terraform
+  ECS_SERVICE_NAME: zameel-devops-flask-service # Must match the ECS service name in Terraform
 
-  ECS_TASK_DEFINITION_FAMILY: zameel-devops-flask-task # Must match the ECS
-task definition family in Terraform
+  ECS_TASK_DEFINITION_FAMILY: zameel-devops-flask-task # Must match the ECS task definition family in Terraform
 
 
 
