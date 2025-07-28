@@ -108,8 +108,7 @@ jobs:
 
       run: |
 
-        aws ecs describe-task-definition --task-definition ${{
-env.ECS_TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
 
 
 
@@ -121,12 +120,9 @@ env.ECS_TASK_DEFINITION_FAMILY }} --query taskDefinition > task-definition.json
 
       run: |
 
-        NEW_TASK_DEF=$(jq --arg IMAGE "${{
-steps.build-image.outputs.image_uri }}" \
+        NEW_TASK_DEF=$(jq --arg IMAGE "${{ steps.build-image.outputs.image_uri }}" \
 
-          '.containerDefinitions[0].image = $IMAGE | .cpu = "256" | .memory
-= "512" | del(.taskDefinitionArn) | del(.revision) | del(.status) |
-del(.compatibilities) | del(.requiresAttributes) | del(.registeredAt) |
+          '.containerDefinitions[0].image = $IMAGE | .cpu = "256" | .memory = "512" | del(.taskDefinitionArn) | del(.trevision) | del(.status) | del(.compatibilities) | del(.requiresAttributes) | del(.registeredAt) |
 del(.registeredBy) | del(.tags)' \
 
           task-definition.json)
