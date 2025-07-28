@@ -14,7 +14,7 @@ on:
       - 'terraform/**' # Trigger if any Terraform files change
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region from GitHub Secret
+  #AWS_REGION: ${{ secrets.AWS_REGION }} # AWS region from GitHub Secret
   ECR_REPOSITORY_NAME: zameel-devops-flask-repo # Must match the ECR repo name in Terraform
   ECS_CLUSTER_NAME: zameel-devops-flask-cluster # Must match the ECS cluster name in Terraform
   ECS_SERVICE_NAME: zameel-devops-flask-service # Must match the ECS service name in Terraform
@@ -34,7 +34,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} # AWS Access Key ID from GitHub Secret
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} # AWS Secret Access Key from GitHub Secret
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
