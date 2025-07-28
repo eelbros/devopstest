@@ -123,9 +123,7 @@ jobs:
         NEW_TASK_DEF=$(jq --arg IMAGE "${{ steps.build-image.outputs.image_uri }}" \
 
           '.containerDefinitions[0].image = $IMAGE | .cpu = "256" | .memory = "512" | del(.taskDefinitionArn) | del(.trevision) | del(.status) | del(.compatibilities) | del(.requiresAttributes) | del(.registeredAt) |
-del(.registeredBy) | del(.tags)' \
-
-          task-definition.json)
+del(.registeredBy) | del(.tags)' \ task-definition.json)
 
         echo "$NEW_TASK_DEF" > updated-task-definition.json
 
